@@ -1,5 +1,11 @@
 #version 330
 
+// This drawing is based on Gediminas' Tower (Vilnius, Lithuania)
+// https://en.wikipedia.org/wiki/Gediminas%27_Tower
+//
+// Formulas of several geometrical shapes were taken from this website:
+// https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+
 uniform vec2 resolution;
 uniform float currentTime;
 uniform vec3 camPos;
@@ -36,15 +42,15 @@ const vec3 LIGHT_POS[] = vec3[](vec3(5, 18, 10));
 ///////////////////////////////////////////////////////////////////////////////
 
 vec3 getBackground(vec3 dir) {
-    float u = 0.5 + atan(dir.z, -dir.x) / (2 * PI);
-    float v = 0.5 - asin(dir.y) / PI;
-    vec4 texColor = texture(tex, vec2(u, v));
-    return texColor.rgb;
+  float u = 0.5 + atan(dir.z, -dir.x) / (2 * PI);
+  float v = 0.5 - asin(dir.y) / PI;
+  vec4 texColor = texture(tex, vec2(u, v));
+  return texColor.rgb;
 }
 
 vec3 getRayDir() {
-    vec3 xAxis = normalize(cross(camDir, camUp));
-    return normalize(pos.x * (resolution.x / resolution.y) * xAxis + pos.y * camUp + 5 * camDir);
+  vec3 xAxis = normalize(cross(camDir, camUp));
+  return normalize(pos.x * (resolution.x / resolution.y) * xAxis + pos.y * camUp + 5 * camDir);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -53,14 +59,14 @@ float sphere(vec3 pt, float radius) {
 }
 
 float cubeNonLinear(vec3 pt) {
-    return max(max(abs(pt.x), abs(pt.y)), abs(pt.z)) - 1;
+  return max(max(abs(pt.x), abs(pt.y)), abs(pt.z)) - 1;
 }
 
 float cubeLinear(vec3 pt) {
-    vec3 q = abs(pt) - vec3(1);
+  vec3 q = abs(pt) - vec3(1);
 
-    //Why sould we write length(max()) instead of max(length(), 0)
-    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+  //Why sould we write length(max()) instead of max(length(), 0)
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
 
 float roundBox( vec3 p, vec3 b, float r ) {
@@ -121,15 +127,15 @@ float udQuad( vec3 p, vec3 a, vec3 b, vec3 c, vec3 d )
 ///////////////////////////////////////////////////////////////////////////////
 
 vec3 translation (vec3 pt, vec3 translationVector){
-    return pt - translationVector;
+  return pt - translationVector;
 }
 
 vec3 rotationAboutXAxis (vec3 pt, float angle){
     mat4 rotationMatrix = mat4(
-    vec4(1, 0, 0, 0),
-    vec4(0, cos(angle), sin(angle), 0),
-    vec4(0, -sin(angle), cos(angle), 0),
-    vec4(0, 0, 0, 1)
+        vec4(1, 0, 0, 0),
+        vec4(0, cos(angle), sin(angle), 0),
+        vec4(0, -sin(angle), cos(angle), 0),
+        vec4(0, 0, 0, 1)
     );
 
     return (vec4(pt, 1) * inverse(rotationMatrix)).xyz;
@@ -137,11 +143,11 @@ vec3 rotationAboutXAxis (vec3 pt, float angle){
 
 //union is a reserved keyword so I changed function name
 float unification (float sdf1, float sdf2){
-    return min(sdf1, sdf2);
+  return min(sdf1, sdf2);
 }
 
 float difference (float sdf1, float sdf2){
-    return max(sdf1, -sdf2);
+  return max(sdf1, -sdf2);
 }
 
 float blend (float sdf1, float sdf2) {
@@ -151,41 +157,41 @@ float blend (float sdf1, float sdf2) {
 }
 
 float intersection (float sdf1, float sdf2){
-    return max(sdf1, sdf2);
+  return max(sdf1, sdf2);
 }
 
 float sdfWithoutPlane(vec3 pt) {
     //bool isWithinBorders = ((pt.x >= -10 && pt.x < 9) && (pt.y >= -10 && pt.y < 9));
     float fence =
-    difference(
-    intersection(
-    roundBox(pt, vec3(20, 2, 30), 0),
-    roundBox(vec3(mod(pt.x + 2, 4) - 2, pt.y, mod(pt.z + 2, 4) - 2), vec3(1, 2, 1), 0)),
-    roundBox(pt, vec3(18, 3, 28), 0)
-    );
+            difference(
+                intersection(
+                roundBox(pt, vec3(20, 2, 30), 0),
+                roundBox(vec3(mod(pt.x + 2, 4) - 2, pt.y, mod(pt.z + 2, 4) - 2), vec3(1, 2, 1), 0)),
+                roundBox(pt, vec3(18, 3, 28), 0)
+            );
 
     float hill = blend(
-    blend(
-    blend(
-    sphere(translation(pt, vec3(-10, 0, -6)), 3.5),
-    sphere(translation(pt, vec3(6, 0, -15)), 4)
-    ),
-    blend(
-    sphere(pt, 5),
-    sphere(translation(pt, vec3(0, 0, 4)), 4)
-    )
-    ),
-    blend(
-    blend(
-    sphere(translation(pt, vec3(-3, 0, -3)), 3.5),
-    sphere(translation(pt, vec3(5, 0, 2)), 4)
-    ),
-    blend(
-    sphere(translation(pt, vec3(2, 0, -6)), 4),
-    sphere(translation(pt, vec3(-4, 0, 5)), 3.5)
-    )
-    )
-    );
+                    blend(
+                        blend(
+                            sphere(translation(pt, vec3(-10, 0, -6)), 3.5),
+                            sphere(translation(pt, vec3(6, 0, -15)), 4)
+                        ),
+                        blend(
+                            sphere(pt, 5),
+                            sphere(translation(pt, vec3(0, 0, 4)), 4)
+                        )
+                    ),
+                    blend(
+                        blend(
+                            sphere(translation(pt, vec3(-3, 0, -3)), 3.5),
+                            sphere(translation(pt, vec3(5, 0, 2)), 4)
+                            ),
+                        blend(
+                            sphere(translation(pt, vec3(2, 0, -6)), 4),
+                            sphere(translation(pt, vec3(-4, 0, 5)), 3.5)
+                        )
+                    )
+            );
 
     float castleLayer1 = hexPrism(rotationAboutXAxis(translation(pt, vec3(0, 0, 10)), PI/2), vec2(5,2));
     float castleLayer2 = hexPrism(rotationAboutXAxis(translation(pt, vec3(0, 2, 10)), PI/2), vec2(4,2));
@@ -193,21 +199,21 @@ float sdfWithoutPlane(vec3 pt) {
     float castleLayer4 = hexPrism(rotationAboutXAxis(translation(pt, vec3(0, 4, 10)), PI/2), vec2(2.5,3));
 
     float castle = unification(
-    unification(castleLayer1, castleLayer2),
-    difference(castleLayer3, castleLayer4)
+            unification(castleLayer1, castleLayer2),
+            difference(castleLayer3, castleLayer4)
     );
 
     float flag = unification(
-    capsule(pt, vec3(0,0,10), vec3(0,10,10), 0.25),
-    udQuad(pt, vec3(0,10,10), vec3(0,12,10), vec3(0,12,14), vec3(0,10,14)));
+        capsule(pt, vec3(0,0,10), vec3(0,10,10), 0.25),
+        udQuad(pt, vec3(0,10,10), vec3(0,12,10), vec3(0,12,14), vec3(0,10,14)));
     return unification(
-    fence,
-    blend(
-    unification(
-    castle,
-    flag ),
-    hill
-    )
+            fence,
+            blend(
+                unification(
+                    castle,
+                    flag ),
+                hill
+            )
     );
     //return torus(rotationAboutXAxis( translation(pt, vec3(0, 3, 0)) , PI/2) , 3, 1);
 }
@@ -218,7 +224,7 @@ float sdfWithPlane(vec3 pt) {
 ///////////////////////////////////////////////////////////////////////////////
 
 vec3 getNormal(vec3 pt) {
-    return normalize(GRADIENT(pt, sdfWithPlane));
+  return normalize(GRADIENT(pt, sdfWithPlane));
 }
 
 vec3 getColor(vec3 pt) {
@@ -229,9 +235,9 @@ vec3 getColor(vec3 pt) {
     if(abs(distToTheFlag) < CLOSE_ENOUGH ){
         float colorLevel = (pt.y - 10)/2;
         if(colorLevel < 0.33)
-        return RED;
+            return RED;
         if(colorLevel < 0.66)
-        return GREEN;
+            return GREEN;
         return YELLOW;
     }
 
@@ -269,20 +275,20 @@ float getShadow(vec3 pt) {
 }
 
 float shade(vec3 eye, vec3 pt, vec3 n) {
-    float val = 0;
+  float val = 0;
+  
+  val += 0.1;  // Ambient
+  
+  for (int i = 0; i < LIGHT_POS.length(); i++) {
+      vec3 l = normalize(LIGHT_POS[i] - pt);
+      val += max(dot(n, l), 0) * getShadow(pt); //Diffuse component
 
-    val += 0.1;  // Ambient
-
-    for (int i = 0; i < LIGHT_POS.length(); i++) {
-        vec3 l = normalize(LIGHT_POS[i] - pt);
-        val += max(dot(n, l), 0) * getShadow(pt); //Diffuse component
-
-        vec3 viewVector = normalize(eye - pt);
-        vec3 reflectionVector = normalize(2 * dot(n, l)*n - l);
-        float specularComponent = max(dot(viewVector, reflectionVector), 0) * getShadow(pt);
-        if( specularComponent > 0) val += pow(specularComponent, 256);  //Specular
-    }
-    return val;
+      vec3 viewVector = normalize(eye - pt);
+      vec3 reflectionVector = normalize(2 * dot(n, l)*n - l);
+      float specularComponent = max(dot(viewVector, reflectionVector), 0) * getShadow(pt);
+      if( specularComponent > 0) val += pow(specularComponent, 256);  //Specular
+  }
+  return val;
 }
 
 vec3 illuminate(vec3 camPos, vec3 rayDir, vec3 pt) {
@@ -296,27 +302,27 @@ vec3 illuminate(vec3 camPos, vec3 rayDir, vec3 pt) {
 ///////////////////////////////////////////////////////////////////////////////
 
 vec3 raymarch(vec3 camPos, vec3 rayDir) {
-    int step = 0;
-    float t = 0;
+  int step = 0;
+  float t = 0;
 
-    for (float d = 1000; step < RENDER_DEPTH  && abs(d) > CLOSE_ENOUGH ; t += abs(d) )
-    {
-        vec3 currentPosition = camPos + t * rayDir;
-        d = sdfWithPlane(currentPosition);
-        step++;
-    }
+  for (float d = 1000; step < RENDER_DEPTH  && abs(d) > CLOSE_ENOUGH ; t += abs(d) )
+  {
+    vec3 currentPosition = camPos + t * rayDir;
+    d = sdfWithPlane(currentPosition);
+    step++;
+  }
 
-    if (step == RENDER_DEPTH) {
-        return getBackground(rayDir);
-    } else if (showStepDepth) {
-        return vec3(float(step) / RENDER_DEPTH);
-    } else {
-        return illuminate(camPos, rayDir, camPos + t * rayDir);
-    }
+  if (step == RENDER_DEPTH) {
+    return getBackground(rayDir);
+  } else if (showStepDepth) {
+    return vec3(float(step) / RENDER_DEPTH);
+  } else {
+    return illuminate(camPos, rayDir, camPos + t * rayDir);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 void main() {
-    color = raymarch(camPos, getRayDir());
+  color = raymarch(camPos, getRayDir());
 }
